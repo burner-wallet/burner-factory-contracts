@@ -1,0 +1,11 @@
+{
+  "name": "token-factory-contracts",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "David Mihal <david@dmihal.com>",
+  "license": "MIT",
+  "dependencies": {
+    "openzeppelin-solidity": "^2.3.0",
+    "tabookey-gasless": "^0.4.0"
+  }
+}
