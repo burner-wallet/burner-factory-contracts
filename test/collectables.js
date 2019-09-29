@@ -36,4 +36,15 @@ contract('Collectables', function([admin, user1]) {
     const original = await contract.getCollectablesById('1');
     assert.equal(original.numClonesInWild, '1');
   });
+
+  it("shouldn't let a user clone a token twice", async () => {
+    const contract = await Collectables.new("Test Token", "TEST", "https://test.com/");
+    await contract.mint(admin, '100');
+
+    await contract.clone(user1, '1', { from: user1 });
+
+    assert.equal(await contract.getClonedTokenByAddress(user1, '1'), '2');
+
+    await contract.clone(user1, '1').then(() => { throw new Error() }, () => null);
+  });
 });

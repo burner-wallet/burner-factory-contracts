@@ -17,6 +17,8 @@ contract Collectables is ERC721Full, Ownable {
     bool public isMintable = true;
     string public uriPrefix;
 
+    mapping(address => mapping(uint256 => uint256)) private clonedTokenByAddress;
+
     modifier mintable {
         require(
             isMintable == true,
@@ -59,6 +61,7 @@ contract Collectables is ERC721Full, Ownable {
     /// @param _to The address to clone to.
     /// @param _tokenId The token id of the Collectables to clone and transfer.
     function clone(address _to, uint256 _tokenId) public mintable {
+        require(clonedTokenByAddress[_to][_tokenId] == 0);
         // Grab existing Collectable blueprint
         Collectable memory _collectable = collectables[_tokenId];
         require(
@@ -77,8 +80,13 @@ contract Collectables is ERC721Full, Ownable {
         // Note that Solidity uses 0 as a default value when an item is not found in a mapping.
         uint256 newTokenId = collectables.push(_newCollectable) - 1;
 
-        // Mint the new collectables to the _to account
+        clonedTokenByAddress[_to][_tokenId] = newTokenId;
+
         _mint(_to, newTokenId);
+    }
+
+    function getClonedTokenByAddress(address user, uint256 baseToken) public view returns (uint256) {
+        return clonedTokenByAddress[user][baseToken];
     }
 
 
