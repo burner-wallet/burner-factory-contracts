@@ -2654,10 +2654,10 @@ swarm-js@0.1.37:
     tar.gz "^1.0.5"
     xhr-request-promise "^0.1.2"
 
-tabookey-gasless@^0.4.0:
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/tabookey-gasless/-/tabookey-gasless-0.4.0.tgz#3b3bee882dc48f4f71726857d4a7c9e88c436843"
-  integrity sha512-3IHosw6iPVq8sbVnmVXBccsXlpXwIdI8ah6b9v9kF/cqDZZcoPSXquRUMIXmVqgulON933Lyje+yghsw21Ll3Q==
+tabookey-gasless@^0.4.1:
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/tabookey-gasless/-/tabookey-gasless-0.4.1.tgz#638f7db56b0da55cd66e19136b996b2c6e3d441c"
+  integrity sha512-bB5rV4X+QVDrQxb4Blg7Hh2M/R02x8XQS2T2rDxuiAoDqG0RThUqCytNoW6FpRYQi40onPBWPC3iZ9sPmqs6RA==
   dependencies:
     "@0x/contracts-utils" "3.1.1"
     abi-decoder "^1.2.0"
