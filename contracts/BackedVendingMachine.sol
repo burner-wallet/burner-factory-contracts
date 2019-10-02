@@ -5,6 +5,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC777/IERC777Recipient.sol";
 import "./ForwardingAddress.sol";
 import "./VendableToken.sol";
+import "./IVendingMachine.sol";
 
 contract SimpleForwardingAddress {
   BackedVendingMachine private machine;
@@ -18,7 +19,7 @@ contract SimpleForwardingAddress {
   }
 }
 
-contract BackedVendingMachine is IERC777Recipient {
+contract BackedVendingMachine is IERC777Recipient, IVendingMachine {
   using SafeMath for uint256;
 
   VendableToken public token;

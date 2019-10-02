@@ -1,8 +1,5 @@
 pragma solidity ^0.5.0;
-
-contract IVendingMachine {
-  function distribute(address payable[] calldata recipients) external payable;
-}
+import './IVendingMachine.sol';
 
 contract ForwardingAddress {
   IVendingMachine public vendingMachine;
