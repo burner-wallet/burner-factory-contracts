@@ -5,7 +5,10 @@
   "author": "David Mihal <david@dmihal.com>",
   "license": "MIT",
   "dependencies": {
-    "openzeppelin-solidity": "^2.3.0",
+    "@openzeppelin/gsn-helpers": "^0.2.1",
+    "@openzeppelin/gsn-provider": "^0.1.9",
+    "@openzeppelin/test-helpers": "^0.5.3",
+    "openzeppelin-solidity": "^2.4.0",
     "tabookey-gasless": "^0.4.0"
   }
 }

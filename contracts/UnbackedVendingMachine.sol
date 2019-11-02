@@ -2,18 +2,15 @@ pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/introspection/IERC1820Registry.sol";
 import "openzeppelin-solidity/contracts/token/ERC777/IERC777Recipient.sol";
-import "./VendableToken.sol";
+import "./VendingMachine.sol";
 
-contract UnbackedVendingMachine is IERC777Recipient {
-
-  VendableToken public token;
-
+contract UnbackedVendingMachine is IERC777Recipient, VendingMachine {
   IERC1820Registry private _erc1820 = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
 
   mapping(address => bool) private admins;
 
-  constructor(string memory _name, string memory _symbol, uint256 _cap, address relayHub) public {
-    token = new VendableToken(address(this), _name, _symbol, _cap, relayHub);
+  constructor(string memory _name, string memory _symbol, uint256 _cap) public {
+    deployToken(_name, _symbol, _cap);
     admins[msg.sender] = true;
 
     _erc1820.setInterfaceImplementer(address(this), keccak256("ERC777TokensRecipient"), address(this));

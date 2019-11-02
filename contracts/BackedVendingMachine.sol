@@ -4,8 +4,7 @@ import "openzeppelin-solidity/contracts/introspection/IERC1820Registry.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC777/IERC777Recipient.sol";
 import "./ForwardingAddress.sol";
-import "./VendableToken.sol";
-import "./IVendingMachine.sol";
+import "./VendingMachine.sol";
 
 contract SimpleForwardingAddress {
   BackedVendingMachine private machine;
@@ -19,7 +18,7 @@ contract SimpleForwardingAddress {
   }
 }
 
-contract BackedVendingMachine is IERC777Recipient, IVendingMachine {
+contract BackedVendingMachine is IERC777Recipient, VendingMachine {
   using SafeMath for uint256;
 
   VendableToken public token;
@@ -31,8 +30,9 @@ contract BackedVendingMachine is IERC777Recipient, IVendingMachine {
   event NewForwardingAddress(address forwardingAddress);
   event Distributed(address indexed sender, uint256 total, uint256 share);
 
-  constructor(string memory _name, string memory _symbol, uint256 _cap, address relayHub) public payable {
-    token = new VendableToken(address(this), _name, _symbol, _cap, relayHub);
+  constructor(string memory _name, string memory _symbol, uint256 _cap) public payable {
+    deployToken(_name, _symbol, _cap);
+
     relayFundingAddress = new SimpleForwardingAddress();
 
     _erc1820.setInterfaceImplementer(address(this), keccak256("ERC777TokensRecipient"), address(this));

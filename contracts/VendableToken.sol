@@ -11,16 +11,15 @@ contract VendableToken is RelayableERC777 {
   mapping(address => uint256) public lastActivity;
 
   constructor(
-      address _vendingMachine,
       string memory _name,
       string memory _symbol,
       uint256 _cap,
-      uint256 _expirationTime,
-      address hubAddress
-    ) public RelayableERC777(_name, _symbol, new address[](0), hubAddress) {
-    vendingMachine = _vendingMachine;
+      // uint256 _expirationTime,
+      address[] memory defaultOperators
+    ) public RelayableERC777(_name, _symbol, defaultOperators) {
+    vendingMachine = msg.sender;
     cap = _cap;
-    expirationTime = _expirationTime;
+    // expirationTime = _expirationTime;
   }
 
   modifier onlyVendingMachine {
@@ -44,25 +43,22 @@ contract VendableToken is RelayableERC777 {
     return _withdrawFromRelay();
   }
 
-  function canRecover(address account) public view {
-    return now - lastActivity[account] > expirationTime;
-  }
 
-  function recover(address account) public onlyVendingMachine returns (uint256) {
-    require(canRecover(account));
-    uint256 balance = balanceOf(account);
-    RelayableERC777._move(vendingMachine, account, vendingMachine, balance, new bytes(0), new bytes(0));
-  }
+  // function recover(address account) public onlyVendingMachine returns (uint256) {
+  //   require(canRecover(account));
+  //   uint256 balance = balanceOf(account);
+  //   RelayableERC777_2._move(vendingMachine, account, vendingMachine, balance, new bytes(0), new bytes(0));
+  // }
 
-  function _move(
-    address operator,
-    address from,
-    address to,
-    uint256 amount,
-    bytes memory userData,
-    bytes memory operatorData
-  ) internal {
-    RelayableERC777._move(operator, from, to, amount, userData, operatorData);
-    lastActivity[from] = now;
-  }
+  // function _move(
+  //   address operator,
+  //   address from,
+  //   address to,
+  //   uint256 amount,
+  //   bytes memory userData,
+  //   bytes memory operatorData
+  // ) internal {
+  //   RelayableERC777_2._move(operator, from, to, amount, userData, operatorData);
+  //   lastActivity[from] = now;
+  // }
 }
