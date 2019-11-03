@@ -6,7 +6,6 @@ contract VendableToken is RelayableERC777 {
 
   address public vendingMachine;
   uint256 public cap;
-  uint256 public expirationTime;
 
   mapping(address => uint256) public lastActivity;
 
@@ -14,7 +13,6 @@ contract VendableToken is RelayableERC777 {
       string memory _name,
       string memory _symbol,
       uint256 _cap,
-      // uint256 _expirationTime,
       address[] memory defaultOperators
     ) public RelayableERC777(_name, _symbol, defaultOperators) {
     vendingMachine = msg.sender;
@@ -39,26 +37,7 @@ contract VendableToken is RelayableERC777 {
     return true;
   }
 
-  function withdrawFromRelay() public onlyVendingMachine returns (uint256) {
-    return _withdrawFromRelay();
+  function withdrawFromRelay(address payable recipient, uint256 amount) public onlyVendingMachine {
+    _withdrawFromRelay(recipient, amount);
   }
-
-
-  // function recover(address account) public onlyVendingMachine returns (uint256) {
-  //   require(canRecover(account));
-  //   uint256 balance = balanceOf(account);
-  //   RelayableERC777_2._move(vendingMachine, account, vendingMachine, balance, new bytes(0), new bytes(0));
-  // }
-
-  // function _move(
-  //   address operator,
-  //   address from,
-  //   address to,
-  //   uint256 amount,
-  //   bytes memory userData,
-  //   bytes memory operatorData
-  // ) internal {
-  //   RelayableERC777_2._move(operator, from, to, amount, userData, operatorData);
-  //   lastActivity[from] = now;
-  // }
 }

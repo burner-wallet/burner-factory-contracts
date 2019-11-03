@@ -25,7 +25,7 @@ contract('RelayableERC777', ([account1]) => {
 
   it('Should relay a token transfer', async () => {
     const token = await TestRelayableERC777.new();
-    token.depositForRelay({ value: web3.utils.toWei('0.5', 'ether'), from: account1 });
+    await token.depositForRelay({ value: web3.utils.toWei('0.5', 'ether'), from: account1 });
 
     const gsnAccount = web3.eth.accounts.create();
 

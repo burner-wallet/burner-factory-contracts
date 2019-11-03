@@ -1,12 +1,12 @@
 pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/GSN/GSNRecipient.sol";
-import "openzeppelin-solidity/contracts/token/ERC777/ERC777.sol";
+import "./ModifiedERC777.sol";
 
-contract RelayableERC777 is ERC777, GSNRecipient {
+contract RelayableERC777 is ModifiedERC777, GSNRecipient {
   constructor(string memory name, string memory symbol, address[] memory defaultOperators)
   public
-  ERC777(name, symbol, defaultOperators) {}
+  ModifiedERC777(name, symbol, defaultOperators) {}
 
   // accept all requests
   function acceptRelayedCall(
@@ -31,10 +31,8 @@ contract RelayableERC777 is ERC777, GSNRecipient {
     getRelayHub().depositFor.value(msg.value)(address(this));
   }
 
-  function _withdrawFromRelay() internal returns (uint256) {
-    uint256 balance = getRelayHub().balanceOf(address(this));
-    getRelayHub().withdraw(balance, address(uint160(address(this))));
-    return balance;
+  function _withdrawFromRelay(address payable recipient, uint256 amount) internal {
+    getRelayHub().withdraw(amount, recipient);
   }
 
   function getRelayHub() internal view returns (IRelayHub) {

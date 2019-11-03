@@ -21,4 +21,6 @@ contract NativeVendingMachine is IVendingMachine {
     ForwardingAddress newAddress = new ForwardingAddress(address(uint160(address(this))), recipients);
     emit NewForwardingAddress(address(newAddress));
   }
+
+  function forwardRelayDeposit(address sender) external payable {}
 }
