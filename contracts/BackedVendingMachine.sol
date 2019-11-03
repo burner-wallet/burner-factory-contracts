@@ -10,8 +10,8 @@ contract BackedVendingMachine is IERC777Recipient, VendingMachine {
   event NewForwardingAddress(address forwardingAddress);
   event Distributed(address indexed sender, uint256 total, uint256 share);
 
-  constructor(string memory _name, string memory _symbol, uint256 _cap)
-    public payable VendingMachine(_name, _symbol, _cap) {
+  constructor(string memory _name, string memory _symbol, uint256 _cap, uint256 timeout)
+    public payable VendingMachine(_name, _symbol, _cap, timeout) {
   }
 
   function () payable external {

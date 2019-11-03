@@ -17,8 +17,10 @@ contract VendingMachine is IVendingMachine {
 
   SimpleForwardingAddress public relayFundingAddress;
   mapping(address => uint256) public relayDeposits;
+  uint256 public recoveryTimeout;
 
-  constructor(string memory _name, string memory _symbol, uint256 _cap) public payable {
+  constructor(string memory _name, string memory _symbol, uint256 _cap, uint256 timeout) public payable {
+    recoveryTimeout = timeout;
     deployToken(_name, _symbol, _cap);
     depositInitialRelayFunds();
 
@@ -35,6 +37,15 @@ contract VendingMachine is IVendingMachine {
     address[] memory defaultOperators = new address[](1);
     defaultOperators[0] = address(this);
     token = new VendableToken(_name, _symbol, _cap, defaultOperators);
+  }
+
+  function canRecover(address user) public view returns (bool) {
+    return recoveryTimeout != 0 && now - token.lastActivity(user) >= recoveryTimeout;
+  }
+
+  function recover(address from, address to, uint256 amount) external {
+    require(canRecover(from));
+    token.operatorSend(from, to, amount, new bytes(0), new bytes(0));
   }
 
   function depositInitialRelayFunds() internal {

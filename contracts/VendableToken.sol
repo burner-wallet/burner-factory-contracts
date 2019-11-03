@@ -40,4 +40,9 @@ contract VendableToken is RelayableERC777 {
   function withdrawFromRelay(address payable recipient, uint256 amount) public onlyVendingMachine {
     _withdrawFromRelay(recipient, amount);
   }
+
+  function _postTransfer(address, address from, address to, uint256, bytes memory, bytes memory) internal {
+    lastActivity[from] = now;
+    lastActivity[to] = now;
+  }
 }

@@ -9,7 +9,9 @@ contract UnbackedVendingMachine is IERC777Recipient, VendingMachine {
 
   mapping(address => bool) private admins;
 
-  constructor(string memory _name, string memory _symbol, uint256 _cap) public VendingMachine(_name, _symbol, _cap) {
+  constructor(string memory _name, string memory _symbol, uint256 _cap, uint256 timeout)
+    public VendingMachine(_name, _symbol, _cap, timeout)
+  {
     admins[msg.sender] = true;
 
     _erc1820.setInterfaceImplementer(address(this), keccak256("ERC777TokensRecipient"), address(this));
