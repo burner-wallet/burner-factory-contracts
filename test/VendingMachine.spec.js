@@ -1,19 +1,12 @@
-const { deployRelayHub } = require('@openzeppelin/gsn-helpers');
-const { singletons } = require('@openzeppelin/test-helpers');
+const { deploySingletons, increaseTime } = require('./lib');
 const TestVendingMachine = artifacts.require('TestVendingMachine');
 const VendableToken = artifacts.require('VendableToken');
-const { increaseTime } = require('./lib');
 
 const HALF_ETH = web3.utils.toWei('0.5', 'ether');
 const ONE_ETH = web3.utils.toWei('1', 'ether');
 
 contract('VendingMachine', ([account1, account2, account3]) => {
-  before(async () => {
-    await Promise.all([
-      singletons.ERC1820Registry(account1),
-      deployRelayHub(web3, { from: account1 }),
-    ]);
-  });
+  before(deploySingletons);
 
   it('should deposit and withdraw eth for relay', async () => {
     const vendingMachine = await TestVendingMachine.new('0', {
