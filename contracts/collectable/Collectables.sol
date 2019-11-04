@@ -3,8 +3,9 @@ pragma solidity ^0.5.0;
 import 'openzeppelin-solidity/contracts/token/ERC721/ERC721Full.sol';
 import 'openzeppelin-solidity/contracts/ownership/Ownable.sol';
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
+import './ICollectables.sol';
 
-contract Collectables is ERC721Full, Ownable {
+contract Collectables is ICollectables, ERC721Full, Ownable {
     using SafeMath for uint256;
 
     struct Collectable {
