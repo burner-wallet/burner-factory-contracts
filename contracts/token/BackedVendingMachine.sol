@@ -3,7 +3,7 @@ pragma solidity ^0.5.0;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./ForwardingAddress.sol";
 import "./VendingMachine.sol";
-import "./Whitelist.sol";
+import "../Whitelist.sol";
 
 contract BackedVendingMachine is IERC777Recipient, VendingMachine {
   using SafeMath for uint256;

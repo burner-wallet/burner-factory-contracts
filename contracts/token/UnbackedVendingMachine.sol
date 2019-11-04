@@ -3,7 +3,7 @@ pragma solidity ^0.5.0;
 import "openzeppelin-solidity/contracts/introspection/IERC1820Registry.sol";
 import "openzeppelin-solidity/contracts/token/ERC777/IERC777Recipient.sol";
 import "./VendingMachine.sol";
-import "./Whitelist.sol";
+import "../Whitelist.sol";
 
 contract UnbackedVendingMachine is IERC777Recipient, VendingMachine {
   Whitelist public whitelist;

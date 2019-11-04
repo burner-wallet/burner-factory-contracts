@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import '../RelayableERC777.sol';
+import '../token/RelayableERC777.sol';
 
 contract TestRelayableERC777 is RelayableERC777 {
   constructor() public RelayableERC777("Test Token", "TST", new address[](0)) {

@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import '../VendingMachine.sol';
+import '../token/VendingMachine.sol';
 
 contract TestVendingMachine is VendingMachine {
   constructor(uint timeout) public VendingMachine("Test Token", "TST", 100 ether, timeout) payable {
