@@ -32,6 +32,10 @@ contract BackedVendingMachine is IERC777Recipient, VendingMachine {
     _;
   }
 
+  function recover(address from, address to, uint256 amount) external requireWhitelisted(msg.sender) {
+    _recover(from, to, amount);
+  }
+
   function canRedeem(address user) public view returns (bool) {
     return address(whitelist) == address(0) || whitelist.isWhitelisted(address(this), user);
   }

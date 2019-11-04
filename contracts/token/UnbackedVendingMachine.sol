@@ -23,6 +23,10 @@ contract UnbackedVendingMachine is IERC777Recipient, VendingMachine {
     _;
   }
 
+  function recover(address from, address to, uint256 amount) external requireWhitelisted(msg.sender) {
+    _recover(from, to, amount);
+  }
+
   function tokensReceived(
     address /* operator */,
     address /* from */,

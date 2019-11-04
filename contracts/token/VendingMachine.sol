@@ -43,7 +43,7 @@ contract VendingMachine is IVendingMachine {
     return recoveryTimeout != 0 && now - token.lastActivity(user) >= recoveryTimeout;
   }
 
-  function recover(address from, address to, uint256 amount) external {
+  function _recover(address from, address to, uint256 amount) internal {
     require(canRecover(from));
     token.operatorSend(from, to, amount, new bytes(0), new bytes(0));
   }

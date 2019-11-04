@@ -53,4 +53,7 @@ contract('BackedVendingMachine', ([admin, account1]) => {
   });
 
   it('should let users buy tokens through a forwarding address');
+
+  it('should let whitelisted users recover funds');
+  it('should\'nt let users recover funds');
 });

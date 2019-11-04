@@ -12,4 +12,8 @@ contract TestVendingMachine is VendingMachine {
   function time() external view returns (uint) {
     return now;
   }
+
+  function recover(address from, address to, uint256 amount) external {
+    _recover(from, to, amount);
+  }
 }
