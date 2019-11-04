@@ -17,6 +17,9 @@ contract BackedVendingMachine is IERC777Recipient, VendingMachine {
     public payable VendingMachine(_name, _symbol, _cap, timeout)
   {
     whitelist = Whitelist(_whitelist);
+    if (_whitelist != address(0)) {
+      whitelist.setWhitelisted(address(this), msg.sender, true);
+    }
   }
 
   function () payable external {
