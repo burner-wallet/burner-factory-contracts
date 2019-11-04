@@ -25,6 +25,10 @@ contract VendableToken is RelayableERC777 {
     _;
   }
 
+  function burn(uint256 amount, bytes calldata data) external onlyVendingMachine {
+    _burn(msg.sender, msg.sender, amount, data, "");
+  }
+
   /**
    * @dev Function to mint tokens
    * @param to The address that will receive the minted tokens.
@@ -33,7 +37,7 @@ contract VendableToken is RelayableERC777 {
    */
   function mint(address to, uint256 amount, bytes memory data) public onlyVendingMachine returns (bool) {
     require(totalSupply().add(amount) <= cap);
-    _mint(to, to, amount, data, new bytes(0));
+    _mint(msg.sender, to, amount, data, new bytes(0));
     return true;
   }
 

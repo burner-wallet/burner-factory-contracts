@@ -165,9 +165,9 @@ contract ModifiedERC777 is Context, IERC777, IERC20 {
      *
      * Also emits a {Transfer} event for ERC20 compatibility.
      */
-    function burn(uint256 amount, bytes calldata data) external {
-        _burn(_msgSender(), _msgSender(), amount, data, "");
-    }
+    // function burn(uint256 amount, bytes calldata data) external {
+    //     _burn(_msgSender(), _msgSender(), amount, data, "");
+    // }
 
     /**
      * @dev See {IERC777-isOperatorFor}.

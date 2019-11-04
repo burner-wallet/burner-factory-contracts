@@ -3,6 +3,7 @@ pragma solidity ^0.5.0;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./ForwardingAddress.sol";
 import "./VendingMachine.sol";
+import "./Whitelist.sol";
 
 contract BackedVendingMachine is IERC777Recipient, VendingMachine {
   using SafeMath for uint256;
@@ -10,12 +11,26 @@ contract BackedVendingMachine is IERC777Recipient, VendingMachine {
   event NewForwardingAddress(address forwardingAddress);
   event Distributed(address indexed sender, uint256 total, uint256 share);
 
-  constructor(string memory _name, string memory _symbol, uint256 _cap, uint256 timeout)
-    public payable VendingMachine(_name, _symbol, _cap, timeout) {
+  Whitelist public whitelist;
+
+  constructor(string memory _name, string memory _symbol, uint256 _cap, uint256 timeout, address _whitelist)
+    public payable VendingMachine(_name, _symbol, _cap, timeout)
+  {
+    whitelist = Whitelist(_whitelist);
   }
 
   function () payable external {
     token.mint(msg.sender, msg.value, msg.data);
+  }
+
+  modifier requireWhitelisted(address user) {
+    require(address(whitelist) == address(0) || whitelist.isWhitelisted(address(this), user),
+      "Account must be whitelisted");
+    _;
+  }
+
+  function canRedeem(address user) public view returns (bool) {
+    return address(whitelist) == address(0) || whitelist.isWhitelisted(address(this), user);
   }
 
   function tokensReceived(
@@ -25,7 +40,7 @@ contract BackedVendingMachine is IERC777Recipient, VendingMachine {
     uint256 amount,
     bytes calldata /* userData */,
     bytes calldata /* operatorData */
-  ) external {
+  ) external requireWhitelisted(from) {
     token.burn(amount, new bytes(0));
     address payable _from = address(uint160(from));
     _from.transfer(amount);
