@@ -28,4 +28,16 @@ contract('WalletFactory', ([admin, user1]) => {
 
     assert.equal(await web3.eth.getBalance(recipient), '1000');
   });
+
+  it('should create a wallet and call a transaction in the same tx', async () => {
+    const factory = await WalletFactory.new({ from: admin });
+
+    const walletAddress = await factory.getAddress(user1);
+    await web3.eth.sendTransaction({ to: walletAddress, from: user1, value: '1000' });
+
+    const { address: recipient } = web3.eth.accounts.create();
+    await factory.createAndExecute(recipient, '0x', '1000', { from: user1 });
+
+    assert.equal(await web3.eth.getBalance(recipient), '1000');
+  });
 });

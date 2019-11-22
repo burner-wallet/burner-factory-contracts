@@ -20,15 +20,18 @@ contract Factory2 {
     using _LibBytes for bytes;
     bytes creationCode;
     bytes4 ctorSelector;
+    address public factory;
 
     constructor(bytes memory _creationCode, bytes4 _ctorSelector) public {
+        factory = msg.sender;
         creationCode = _creationCode;
         ctorSelector = _ctorSelector;
     }
 
     uint public salt;
 
-    function setSalt(uint _salt) public returns (Factory2){
+    function setSalt(uint _salt) public returns (Factory2) {
+        require(msg.sender == factory);
         salt = _salt;
         return this;
     }
@@ -39,6 +42,7 @@ contract Factory2 {
     }
 
     function () external {
+        require(msg.sender == factory);
 
         address addr;
         if ( msg.sig == ctorSelector ) {

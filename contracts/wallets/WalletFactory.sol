@@ -4,8 +4,8 @@ import "./Factory2.sol";
 import "./Wallet.sol";
 
 interface InnerWalletFactory {
-  function create(address creator) external returns (Wallet);
-  function getAddress(address creator) view external returns (address);
+  function create(address factory, address creator) external returns (Wallet);
+  function getAddress(address factory, address creator) view external returns (address);
   function setSalt(uint salt) external returns (InnerWalletFactory);
 }
 
@@ -21,10 +21,19 @@ contract WalletFactory {
   }
 
   function getAddress(address creator) external view returns (address) {
-    return innerFactory.getAddress(creator);
+    return innerFactory.getAddress(address(this), creator);
   }
 
-  function createWallet(address owner) external returns (address) {
-    return address(innerFactory.create(owner));
+  function createWallet(address creator) external returns (address) {
+    return address(innerFactory.create(address(this), creator));
+  }
+
+  function createAndExecute(
+    address target,
+    bytes calldata data,
+    uint256 value
+  ) external returns (bytes memory response) {
+    Wallet wallet = innerFactory.create(address(this), msg.sender);
+    return wallet.execute(target, data, value);
   }
 }
