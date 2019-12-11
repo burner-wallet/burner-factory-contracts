@@ -1,6 +1,11 @@
 pragma solidity ^0.5.8;
 
-contract Wallet {
+import "./ERC1271.sol";
+import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
+
+contract Wallet is ERC1271 {
+  using ECDSA for bytes32;
+
   address public creator;
 
   mapping(address => bool) public owners;
@@ -12,6 +17,7 @@ contract Wallet {
     owners[_factory] = true;
     owners[_creator] = true;
     owners[address(this)] = true;
+    creator = _creator;
     emit OwnerAdded(_creator);
   }
 
@@ -42,5 +48,10 @@ contract Wallet {
     require(otherOwner != msg.sender);
     require(creator != msg.sender);
     owners[otherOwner] = false;
+  }
+
+  function isValidSignature(bytes32 hash, bytes memory signature) public view returns (bytes4) {
+    address signer = hash.toEthSignedMessageHash().recover(signature);
+    return returnIsValidSignatureMagicNumber(owners[signer]);
   }
 }
