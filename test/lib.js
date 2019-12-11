@@ -1,4 +1,4 @@
-const { deployRelayHub } = require('@openzeppelin/gsn-helpers');
+const { deployRelayHub, runAndRegister } = require('@openzeppelin/gsn-helpers');
 const { singletons } = require('@openzeppelin/test-helpers');
 
 module.exports.increaseTime = async function(amount) {
@@ -18,3 +18,18 @@ module.exports.deploySingletons = async function deploySingletons() {
     deployRelayHub(web3, { from: account }),
   ]);
 }
+
+module.exports.startRelay = async function startRelay(sender) {
+  await singletons.ERC1820Registry(sender);
+  const relayProcess = await runAndRegister(web3, {
+    relayUrl: 'http://localhost:8090',
+    workdir: `${process.cwd()}/gsn-relay`, // defaults to a tmp dir
+    devMode: true,
+    ethereumNodeURL: 'http://localhost:8545',
+    gasPricePercent: 0,
+    port: 8090,
+    quiet: true,
+    from: sender,
+  });
+  return relayProcess;
+};
