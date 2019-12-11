@@ -70,7 +70,7 @@ contract('WalletFactory', ([admin, user1]) => {
     const { address: recipient } = web3.eth.accounts.create();
     await factory.createAndExecute(recipient, '0x', '1000', {
       from: gsnAccount.address,
-      gas: 800000,
+      gas: 1000000,
     });
 
     assert.equal(await web3.eth.getBalance(recipient), '1000');

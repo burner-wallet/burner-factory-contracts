@@ -96,7 +96,7 @@ contract WalletFactory is GSNRecipient {
 
     // actualCharge is an _estimated_ charge, which assumes postRelayedCall will use all available gas.
     // This implementation's gas cost have been calculated through trial and error
-    uint256 overestimation = _computeCharge(POST_RELAYED_CALL_MAX_GAS.sub(24255), gasPrice, transactionFee);
+    uint256 overestimation = _computeCharge(POST_RELAYED_CALL_MAX_GAS.sub(24096), gasPrice, transactionFee);
     actualCharge = actualCharge.sub(overestimation);
 
     // Now re-imburse the gas charges directly into the GSN hub.
