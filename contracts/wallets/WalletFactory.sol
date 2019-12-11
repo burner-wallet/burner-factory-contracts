@@ -7,7 +7,7 @@ import "./Factory2.sol";
 import "./Wallet.sol";
 
 interface InnerWalletFactory {
-  function create(address factory, address creator) external returns (Wallet);
+  function create(address factory, address creator) external returns (address);
   function getAddress(address factory, address creator) view external returns (address);
   function setSalt(uint salt) external returns (InnerWalletFactory);
 }
@@ -17,9 +17,6 @@ contract WalletFactory is GSNRecipient {
   using SafeMath for uint256;
 
   InnerWalletFactory public innerFactory;
-
-  function () external payable {
-  }
 
   constructor() public {
     innerFactory = createFactory();
@@ -34,7 +31,7 @@ contract WalletFactory is GSNRecipient {
   }
 
   function createWallet(address creator) public returns (address) {
-    return address(innerFactory.create(address(this), creator));
+    return innerFactory.create(address(this), creator);
   }
 
   function createAndExecute(
@@ -78,7 +75,7 @@ contract WalletFactory is GSNRecipient {
       return _rejectRelayedCall(0);
     }
 
-    return _approveRelayedCall(abi.encode(from, walletAddress, maxPossibleCharge, transactionFee, gasPrice));
+    return _approveRelayedCall(abi.encode(walletAddress, transactionFee, gasPrice));
   }
 
   /**
@@ -88,31 +85,23 @@ contract WalletFactory is GSNRecipient {
    * is returned to the user in {_postRelayedCall}.
    */
   function _preRelayedCall(bytes memory context) internal returns (bytes32) {
-    (address from, address walletAddress, uint256 maxPossibleCharge) = abi.decode(context, (address, address, uint256));
-
-    if (!walletAddress.isContract()) {
-      address created = createWallet(from);
-      // require(walletAddress == created);
-    }
-
-    // Wallet(walletAddress).execute(address(this), new bytes(0), 0);
   }
 
   /**
    * @dev Returns to the user the extra amount that was previously charged, once the actual execution cost is known.
    */
   function _postRelayedCall(bytes memory context, bool, uint256 actualCharge, bytes32) internal {
-    (address from, uint256 maxPossibleCharge, uint256 transactionFee, uint256 gasPrice) =
-        abi.decode(context, (address, uint256, uint256, uint256));
+    (address walletAddress, uint256 transactionFee, uint256 gasPrice) =
+        abi.decode(context, (address, uint256, uint256));
 
     // actualCharge is an _estimated_ charge, which assumes postRelayedCall will use all available gas.
-    // This implementation's gas cost can be roughly estimated as 10k gas, for the two SSTORE operations in an
-    // ERC20 transfer.
-    // uint256 overestimation = _computeCharge(POST_RELAYED_CALL_MAX_GAS.sub(10000), gasPrice, transactionFee);
-    // actualCharge = actualCharge.sub(overestimation);
+    // This implementation's gas cost have been calculated through trial and error
+    uint256 overestimation = _computeCharge(POST_RELAYED_CALL_MAX_GAS.sub(24255), gasPrice, transactionFee);
+    actualCharge = actualCharge.sub(overestimation);
 
-    // After the relayed call has been executed and the actual charge estimated, the excess pre-charge is returned
-    // from.toPayable().transfer(maxPossibleCharge.sub(actualCharge));
+    // Now re-imburse the gas charges directly into the GSN hub.
+    bytes memory depositData = abi.encodeWithSelector(IRelayHub(0).depositFor.selector, address(this));
+    Wallet(walletAddress).execute(getHubAddr(), depositData, actualCharge);
   }
 
 }

@@ -68,17 +68,12 @@ contract('WalletFactory', ([admin, user1]) => {
     WalletFactory.setProvider(gsnProvider);
 
     const { address: recipient } = web3.eth.accounts.create();
-    await factory.createWallet(gsnAccount.address, {
-    // await factory.createAndExecute(recipient, '0x', '1000', {
+    await factory.createAndExecute(recipient, '0x', '1000', {
       from: gsnAccount.address,
       gas: 800000,
     });
-    await factory.execute(recipient, '0x', '1000', {
-      from: gsnAccount.address,
-      gas: 800000,
-    });
-
 
     assert.equal(await web3.eth.getBalance(recipient), '1000');
+    assert.equal((await relayHub.balanceOf(factory.address)).toString(), toWei('0.5', 'ether'));
   });
 });
