@@ -1,6 +1,17 @@
 const Collectables = artifacts.require('Collectables');
+const { GSNProvider } = require('@openzeppelin/gsn-provider');
+const { startRelay } = require('./lib');
 
 contract('Collectables', function([admin, user1]) {
+  let relayProcess;
+  before(async () => {
+    relayProcess = await startRelay(admin);
+  });
+
+  after(() => relayProcess.kill());
+
+  afterEach(() => Collectables.setProvider(web3.currentProvider));
+
   it("should construct contract", async () => {
     const contract = await Collectables.new("Test Token", "TEST", "");
     assert.equal(await contract.name(), "Test Token");
@@ -46,5 +57,25 @@ contract('Collectables', function([admin, user1]) {
     assert.equal(await contract.getClonedTokenByAddress(user1, '1'), '2');
 
     await contract.clone(user1, '1').then(() => { throw new Error() }, () => null);
+  });
+
+  it("should pay gas costs using GSN", async () => {
+    const contract = await Collectables.new("Test Token", "TEST", "https://test.com/", {
+      from: admin,
+      value: web3.utils.toWei('0.1', 'ether'),
+    });
+    await contract.mint(admin, '100');
+
+    const gsnAccount = web3.eth.accounts.create();
+
+    const gsnProvider = new GSNProvider(web3.currentProvider, { signKey: gsnAccount.privateKey });
+    Collectables.setProvider(gsnProvider);
+
+    await contract.clone(gsnAccount.address, '1', {
+      gas: 1000000,
+      from: gsnAccount.address,
+    });
+
+    assert.equal(await contract.getClonedTokenByAddress(gsnAccount.address, '1'), '2');
   });
 });

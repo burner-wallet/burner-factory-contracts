@@ -3,9 +3,10 @@ pragma solidity ^0.5.0;
 import 'openzeppelin-solidity/contracts/token/ERC721/ERC721Full.sol';
 import 'openzeppelin-solidity/contracts/ownership/Ownable.sol';
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
+import "openzeppelin-solidity/contracts/GSN/GSNRecipient.sol";
 import './ICollectables.sol';
 
-contract Collectables is ICollectables, ERC721Full, Ownable {
+contract Collectables is ICollectables, ERC721Full, Ownable, GSNRecipient {
     using SafeMath for uint256;
 
     struct Collectable {
@@ -28,12 +29,17 @@ contract Collectables is ICollectables, ERC721Full, Ownable {
         _;
     }
 
-    constructor(string memory name, string memory symbol, string memory _uriPrefix) public ERC721Full(name, symbol) {
+    constructor(string memory name, string memory symbol, string memory _uriPrefix)
+        public payable ERC721Full(name, symbol)
+    {
         uriPrefix = _uriPrefix;
         // If the array is new, skip over the first index.
         if(collectables.length == 0) {
             Collectable memory _dummyCollectable = Collectable({ numClonesAllowed: 0, numClonesInWild: 0, clonedFromId: 0 });
             collectables.push(_dummyCollectable);
+        }
+        if (msg.value > 0) {
+            depositForRelay();
         }
     }
 
@@ -137,6 +143,46 @@ contract Collectables is ICollectables, ERC721Full, Ownable {
         Collectable memory _collectable = collectables[_tokenId];
 
         numClonesInWild = _collectable.numClonesInWild;
+    }
+
+
+    // accept all requests
+    function acceptRelayedCall(
+        address,
+        address,
+        bytes calldata,
+        uint256,
+        uint256,
+        uint256,
+        uint256,
+        bytes calldata,
+        uint256
+    ) external view returns (uint256, bytes memory) {
+        return _approveRelayedCall();
+    }
+
+    function getRecipientBalance() public view returns (uint) {
+        return getRelayHub().balanceOf(address(this));
+    }
+
+    function depositForRelay() public payable {
+        getRelayHub().depositFor.value(msg.value)(address(this));
+    }
+
+    function _withdrawFromRelay(address payable recipient, uint256 amount) external onlyOwner {
+        getRelayHub().withdraw(amount, recipient);
+    }
+
+    function getRelayHub() internal view returns (IRelayHub) {
+        return IRelayHub(getHubAddr());
+    }
+
+    function _preRelayedCall(bytes memory) internal returns (bytes32) {
+        // solhint-disable-previous-line no-empty-blocks
+    }
+
+    function _postRelayedCall(bytes memory, bool, uint256, bytes32) internal {
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     /// @dev getLatestId(): Returns the newest Collectables Id in the collectables array.

@@ -1,22 +1,11 @@
-const { runAndRegister } = require('@openzeppelin/gsn-helpers');
 const TestRelayableERC777 = artifacts.require('TestRelayableERC777');
-const { singletons } = require('@openzeppelin/test-helpers');
 const { GSNProvider } = require("@openzeppelin/gsn-provider");
+const { startRelay } = require('./lib');
 
 contract('RelayableERC777', ([account1]) => {
   let relayProcess;
   before(async () => {
-    await singletons.ERC1820Registry(account1);
-    relayProcess = await runAndRegister(web3, {
-      relayUrl: 'http://localhost:8090',
-      workdir: `${process.cwd()}/gsn-relay`, // defaults to a tmp dir
-      devMode: true,
-      ethereumNodeURL: 'http://localhost:8545',
-      gasPricePercent: 0,
-      port: 8090,
-      quiet: true,
-      from: account1,
-    });
+    relayProcess = await startRelay(account1);
   });
 
   after(() => relayProcess.kill());
