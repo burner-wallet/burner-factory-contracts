@@ -11,5 +11,10 @@
     "erc1820": "^0.0.2",
     "openzeppelin-solidity": "^2.4.0",
     "tabookey-gasless": "^0.4.0"
+  },
+  "devDependencies": {
+    "@ensdomains/ens": "^0.3.11",
+    "@ensdomains/resolver": "^0.1.13",
+    "eth-ens-namehash": "^2.0.8"
   }
 }
