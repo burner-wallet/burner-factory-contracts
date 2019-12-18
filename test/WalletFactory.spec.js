@@ -76,4 +76,49 @@ contract('WalletFactory', ([admin, user1]) => {
     assert.equal(await web3.eth.getBalance(recipient), '1000');
     assert.equal((await relayHub.balanceOf(factory.address)).toString(), toWei('0.5', 'ether'));
   });
+
+  it('should allow contract execution using a signature', async () => {
+    const factory = await WalletFactory.new({ from: admin });
+    const account = web3.eth.accounts.create();
+
+    const walletAddress = await factory.getAddress(account.address);
+    await web3.eth.sendTransaction({ to: walletAddress, from: user1, value: '1000' });
+    await factory.createWallet(account.address, { from: user1 });
+
+    const { address: recipient } = web3.eth.accounts.create();
+    const hash = web3.utils.soliditySha3(
+      { type: 'address', value: walletAddress },
+      { type: 'address', value: recipient },
+      '0x',
+      '1000'
+    );
+    const { signature } = account.sign(hash);
+
+    await factory.executeWithSignature(walletAddress, recipient, '0x', '1000', signature, { from: user1 });
+    assert.equal(await web3.eth.getBalance(recipient), '1000');
+  });
+
+  it('should let a user add themself as a signer using signatures', async () => {
+    const factory = await WalletFactory.new({ from: admin });
+    const account = web3.eth.accounts.create();
+
+    const walletAddress = await factory.getAddress(account.address);
+    await web3.eth.sendTransaction({ to: walletAddress, from: user1, value: '1000' });
+    await factory.createWallet(account.address, { from: user1 });
+
+    const wallet = await Wallet.at(walletAddress);
+    const data = wallet.contract.methods.addOwner(user1).encodeABI();
+
+    const hash = web3.utils.soliditySha3(
+      { type: 'address', value: walletAddress },
+      { type: 'address', value: walletAddress },
+      data,
+      '0'
+    );
+    const { signature } = account.sign(hash);
+
+    await factory.executeWithSignature(walletAddress, walletAddress, data, '0', signature, { from: user1 });
+
+    assert.isTrue(await wallet.owners(user1));
+  });
 });

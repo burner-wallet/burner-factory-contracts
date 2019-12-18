@@ -18,6 +18,8 @@ contract WalletFactory is GSNRecipient {
 
   InnerWalletFactory public innerFactory;
 
+  bytes4 constant public ERC1271_RETURN_VALID_SIGNATURE = 0x20c13b0b; // TODO: Likely needs to be updated
+
   constructor() public {
     innerFactory = createFactory();
   }
@@ -56,6 +58,28 @@ contract WalletFactory is GSNRecipient {
   ) external returns (bytes memory response) {
     Wallet wallet = Wallet(getAddress(_msgSender()));
     return wallet.execute(target, data, value);
+  }
+event Log(bytes);
+event Log(bytes32);
+  /**
+    * Known issues with this implementation
+    * - Does not prevent replay attacks (there is no nonce)
+    * - Does not prevent cross-chain replay attacks (should use the chainID opcode)
+    */
+  function executeWithSignature(
+    address wallet,
+    address target,
+    bytes calldata data,
+    uint256 value,
+    bytes calldata signature
+  ) external returns (bytes memory response) {
+    Wallet _wallet = Wallet(wallet);
+
+    bytes memory packed = abi.encodePacked(wallet, target, data, value);
+    bytes32 hash = keccak256(packed);
+    require(_wallet.isValidSignature(hash, signature) == ERC1271_RETURN_VALID_SIGNATURE, "Invalid signature");
+
+    return _wallet.execute(target, data, value);
   }
 
   function acceptRelayedCall(
@@ -96,7 +120,7 @@ contract WalletFactory is GSNRecipient {
 
     // actualCharge is an _estimated_ charge, which assumes postRelayedCall will use all available gas.
     // This implementation's gas cost have been calculated through trial and error
-    uint256 overestimation = _computeCharge(POST_RELAYED_CALL_MAX_GAS.sub(24096), gasPrice, transactionFee);
+    uint256 overestimation = _computeCharge(POST_RELAYED_CALL_MAX_GAS.sub(24118), gasPrice, transactionFee);
     actualCharge = actualCharge.sub(overestimation);
 
     // Now re-imburse the gas charges directly into the GSN hub.
