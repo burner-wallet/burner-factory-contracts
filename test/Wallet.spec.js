@@ -14,6 +14,10 @@ function fixSignature (signature) {
   return signature.slice(0, 130) + vHex;
 }
 
+function bytesToByteLength (bytes) {
+  return ((bytes.length - 2) / 2).toString();
+}
+
 contract('Wallet', ([admin, user1, user2, user3]) => {
   it('should be able to add and remove owners', async () => {
     const wallet = await Wallet.new({ from: user1 });
@@ -45,5 +49,28 @@ contract('Wallet', ([admin, user1, user2, user3]) => {
     const signature = fixSignature(await web3.eth.sign(data, user1));
 
     assert.equal(await wallet.isValidSignature(data, signature), '0x20c13b0b');
+  });
+
+  it('should run batch executions', async () => {
+    const wallet = await Wallet.new({ from: user1 });
+    await wallet.initialize(admin, user1, { from: user1 });
+
+    await web3.eth.sendTransaction({ to: wallet.address, from: user1, value: '1000' });
+
+    const { address: recipient } = web3.eth.accounts.create();
+    const data1 = wallet.contract.methods.addOwner(user2).encodeABI();
+    const data2 = wallet.contract.methods.addOwner(user3).encodeABI();
+
+    await wallet.executeBatch(
+      [recipient, wallet.address, wallet.address],
+      data1 + data2.substr(2),
+      ['0', bytesToByteLength(data1), bytesToByteLength(data2)],
+      ['1000', '0', '0'],
+      { from: user1 },
+    );
+
+    assert.equal(await web3.eth.getBalance(recipient), '1000');
+    assert.isTrue(await wallet.isOwner(user2));
+    assert.isTrue(await wallet.isOwner(user3));
   });
 });

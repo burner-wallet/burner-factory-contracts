@@ -3,9 +3,11 @@ pragma solidity ^0.5.8;
 import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 import "./ERC1271.sol";
 import "./IWallet.sol";
+import "./LibBytes.sol";
 
 contract Wallet is ERC1271, IWallet {
   using ECDSA for bytes32;
+  using _LibBytes for bytes;
 
   address public creator;
 
@@ -37,6 +39,25 @@ contract Wallet is ERC1271, IWallet {
     (bool success, bytes memory returnData) = address(target).call.value(value)(data);
     require(success);
     return returnData;
+  }
+
+  function executeBatch(
+    address[] calldata targets,
+    bytes calldata data,
+    uint256[] calldata dataLengths,
+    uint256[] calldata values
+  ) external payable /*onlyOwner returns (bytes memory response, uint256[] responseLengths)*/ {
+    require(targets.length == dataLengths.length && targets.length == values.length, "Invalid lengths");
+
+    uint256 dataPointer = 0;
+
+    for (uint8 i = 0; i < targets.length; i++) {
+      bytes memory _data = data.slice(dataPointer, dataPointer + dataLengths[i]);
+      dataPointer = dataPointer + dataLengths[i];
+
+      (bool success,) = address(targets[i]).call.value(values[i])(_data);
+      require(success);
+    }
   }
 
   function isOwner(address owner) external view returns (bool) {
