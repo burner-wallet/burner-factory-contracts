@@ -84,6 +84,24 @@ contract WalletFactory is GSNRecipient, ProxyHost {
     return _wallet.execute(target, data, value);
   }
 
+  function addOwnerAndExecute(
+    address payable wallet,
+    address target,
+    bytes calldata data,
+    uint256 value,
+    bytes calldata signature
+  ) external returns (bytes memory response) {
+    Wallet _wallet = Wallet(wallet);
+    address sender =  _msgSender();
+
+    bytes memory packed = abi.encodePacked("burn:", wallet, sender);
+    bytes32 hash = keccak256(packed);
+    require(_wallet.isValidSignature(hash, signature) == ERC1271_RETURN_VALID_SIGNATURE, "Invalid signature");
+    _wallet.addOwner(sender);
+
+    return _wallet.execute(target, data, value);
+  }
+
   function acceptRelayedCall(
     address,
     address from,
@@ -122,7 +140,8 @@ contract WalletFactory is GSNRecipient, ProxyHost {
 
     // actualCharge is an _estimated_ charge, which assumes postRelayedCall will use all available gas.
     // This implementation's gas cost have been calculated through trial and error
-    uint256 overestimation = _computeCharge(POST_RELAYED_CALL_MAX_GAS.sub(27438), gasPrice, transactionFee);
+    // Divide error by 34000000000 to fix
+    uint256 overestimation = _computeCharge(POST_RELAYED_CALL_MAX_GAS.sub(27416), gasPrice, transactionFee);
     actualCharge = actualCharge.sub(overestimation);
 
     // Now re-imburse the gas charges directly into the GSN hub.

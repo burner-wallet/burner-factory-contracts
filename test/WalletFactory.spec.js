@@ -140,4 +140,24 @@ contract('WalletFactory', ([admin, user1, user2]) => {
 
     assert.equal(await wallet.creator(), user2);
   });
+
+  it('should let a user add themself as a signer and execute a transaction', async () => {
+    const factory = await WalletFactory.new(implementation, { from: admin });
+    const account = web3.eth.accounts.create();
+
+    const walletAddress = await factory.getAddress(account.address);
+    await factory.createWallet(account.address, { from: user1 });
+    await web3.eth.sendTransaction({ to: walletAddress, from: user1, value: '1000' });
+
+    const wallet = await Wallet.at(walletAddress);
+
+    const hash = web3.utils.soliditySha3('burn:', walletAddress, user1);
+    const { signature } = account.sign(hash);
+
+    const { address: recipient } = web3.eth.accounts.create();
+    await factory.addOwnerAndExecute(walletAddress, recipient, '0x', '1000', signature, { from: user1 });
+
+    assert.isTrue(await wallet.owners(user1));
+    assert.equal(await web3.eth.getBalance(recipient), '1000');
+  });
 });
