@@ -4,7 +4,9 @@ import "openzeppelin-solidity/contracts/GSN/GSNRecipient.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/utils/Address.sol";
 import "./Factory2.sol";
+import "./ProxyHost.sol";
 import "./Wallet.sol";
+import "./WalletProxy.sol";
 
 interface InnerWalletFactory {
   function create(address factory, address creator) external returns (address);
@@ -12,7 +14,7 @@ interface InnerWalletFactory {
   function setSalt(uint salt) external returns (InnerWalletFactory);
 }
 
-contract WalletFactory is GSNRecipient {
+contract WalletFactory is GSNRecipient, ProxyHost {
   using Address for address;
   using SafeMath for uint256;
 
@@ -20,12 +22,12 @@ contract WalletFactory is GSNRecipient {
 
   bytes4 constant public ERC1271_RETURN_VALID_SIGNATURE = 0x20c13b0b; // TODO: Likely needs to be updated
 
-  constructor() public {
+  constructor(address walletImplementation) public ProxyHost(walletImplementation) {
     innerFactory = createFactory();
   }
 
   function createFactory() internal returns (InnerWalletFactory) {
-    return InnerWalletFactory(address(new Factory2(type(Wallet).creationCode, InnerWalletFactory(0).create.selector)));
+    return InnerWalletFactory(address(new Factory2(type(WalletProxy).creationCode, InnerWalletFactory(0).create.selector)));
   }
 
   function getAddress(address creator) public view returns (address) {
@@ -59,8 +61,7 @@ contract WalletFactory is GSNRecipient {
     Wallet wallet = Wallet(getAddress(_msgSender()));
     return wallet.execute(target, data, value);
   }
-event Log(bytes);
-event Log(bytes32);
+
   /**
     * Known issues with this implementation
     * - Does not prevent replay attacks (there is no nonce)
@@ -120,7 +121,7 @@ event Log(bytes32);
 
     // actualCharge is an _estimated_ charge, which assumes postRelayedCall will use all available gas.
     // This implementation's gas cost have been calculated through trial and error
-    uint256 overestimation = _computeCharge(POST_RELAYED_CALL_MAX_GAS.sub(24118), gasPrice, transactionFee);
+    uint256 overestimation = _computeCharge(POST_RELAYED_CALL_MAX_GAS.sub(27438), gasPrice, transactionFee);
     actualCharge = actualCharge.sub(overestimation);
 
     // Now re-imburse the gas charges directly into the GSN hub.

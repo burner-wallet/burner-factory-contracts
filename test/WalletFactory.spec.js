@@ -1,15 +1,19 @@
 const Wallet = artifacts.require('Wallet');
 const WalletFactory = artifacts.require('WalletFactory');
 const IRelayHub = artifacts.require('IRelayHub');
+const TestWalletImplementation = artifacts.require('TestWalletImplementation');
 const { GSNProvider } = require("@openzeppelin/gsn-provider");
 const { startRelay } = require('./lib');
 
 const { toWei } = web3.utils;
 
-contract('WalletFactory', ([admin, user1]) => {
+contract('WalletFactory', ([admin, user1, user2]) => {
   let relayProcess;
+  let implementation;
   before(async () => {
     relayProcess = await startRelay(admin);
+    const implementationInstance = await Wallet.new();
+    implementation = implementationInstance.address;
   });
 
   after(() => relayProcess.kill());
@@ -17,7 +21,7 @@ contract('WalletFactory', ([admin, user1]) => {
   afterEach(() => WalletFactory.setProvider(web3.currentProvider));
 
   it('should generate a wallet using create2', async () => {
-    const factory = await WalletFactory.new({ from: admin });
+    const factory = await WalletFactory.new(implementation, { from: admin });
 
     const walletAddress = await factory.getAddress(user1);
 
@@ -29,7 +33,7 @@ contract('WalletFactory', ([admin, user1]) => {
   });
 
   it('should let the creator execute calls against their wallet', async () => {
-    const factory = await WalletFactory.new({ from: admin });
+    const factory = await WalletFactory.new(implementation, { from: admin });
 
     const walletAddress = await factory.getAddress(user1);
     await web3.eth.sendTransaction({ to: walletAddress, from: user1, value: '1000' });
@@ -44,19 +48,20 @@ contract('WalletFactory', ([admin, user1]) => {
   });
 
   it('should create a wallet and call a transaction in the same tx', async () => {
-    const factory = await WalletFactory.new({ from: admin });
+    const factory = await WalletFactory.new(implementation, { from: admin });
 
     const walletAddress = await factory.getAddress(user1);
     await web3.eth.sendTransaction({ to: walletAddress, from: user1, value: '1000' });
 
     const { address: recipient } = web3.eth.accounts.create();
-    await factory.createAndExecute(recipient, '0x', '1000', { from: user1 });
+    const { receipt } = await factory.createAndExecute(recipient, '0x', '1000', { from: user1 });
+    console.log('createAndExecute gas cost:', receipt.gasUsed);
 
     assert.equal(await web3.eth.getBalance(recipient), '1000');
   });
 
   it('should use GNS to pay for gas using the contract wallet', async () => {
-    const factory = await WalletFactory.new({ from: admin });
+    const factory = await WalletFactory.new(implementation, { from: admin });
     const relayHub = await IRelayHub.at(await factory.getHubAddr());
     await relayHub.depositFor(factory.address, { value: toWei('0.5', 'ether'), from: admin });
 
@@ -78,7 +83,7 @@ contract('WalletFactory', ([admin, user1]) => {
   });
 
   it('should allow contract execution using a signature', async () => {
-    const factory = await WalletFactory.new({ from: admin });
+    const factory = await WalletFactory.new(implementation, { from: admin });
     const account = web3.eth.accounts.create();
 
     const walletAddress = await factory.getAddress(account.address);
@@ -99,7 +104,7 @@ contract('WalletFactory', ([admin, user1]) => {
   });
 
   it('should let a user add themself as a signer using signatures', async () => {
-    const factory = await WalletFactory.new({ from: admin });
+    const factory = await WalletFactory.new(implementation, { from: admin });
     const account = web3.eth.accounts.create();
 
     const walletAddress = await factory.getAddress(account.address);
@@ -120,5 +125,19 @@ contract('WalletFactory', ([admin, user1]) => {
     await factory.executeWithSignature(walletAddress, walletAddress, data, '0', signature, { from: user1 });
 
     assert.isTrue(await wallet.owners(user1));
+  });
+
+  it('should let the owner update the wallet implementation', async () => {
+    const factory = await WalletFactory.new(implementation, { from: admin });
+    const newImplementation = await TestWalletImplementation.new();
+
+    await factory.createWallet(user1, { from: user1 });
+
+    await factory.setDefaultImplementation(newImplementation.address);
+
+    const wallet = await TestWalletImplementation.at(await factory.getAddress(user1));
+    await wallet.changeCreator(user2, { from: user1 });
+
+    assert.equal(await wallet.creator(), user2);
   });
 });

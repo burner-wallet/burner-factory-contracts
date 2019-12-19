@@ -1,10 +1,10 @@
 pragma solidity ^0.5.8;
 
 import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
-import "./ERC1271.sol";
-import "./IWallet.sol";
+import "../wallets/ERC1271.sol";
+import "../wallets/IWallet.sol";
 
-contract Wallet is ERC1271, IWallet {
+contract TestWalletImplementation is ERC1271, IWallet {
   using ECDSA for bytes32;
 
   address public creator;
@@ -54,5 +54,9 @@ contract Wallet is ERC1271, IWallet {
   function isValidSignature(bytes32 hash, bytes memory signature) public view returns (bytes4) {
     address signer = hash.toEthSignedMessageHash().recover(signature);
     return returnIsValidSignatureMagicNumber(owners[signer]);
+  }
+
+  function changeCreator(address newCreator) external onlyOwner {
+    creator = newCreator;
   }
 }
