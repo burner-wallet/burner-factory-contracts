@@ -22,6 +22,8 @@ contract Wallet is ERC1271, IWallet {
     creator = _creator;
   }
 
+  function () external payable {}
+
   modifier onlyOwner() {
     require(owners[msg.sender] || msg.sender == address(this), "Must be called by the creator");
     _;

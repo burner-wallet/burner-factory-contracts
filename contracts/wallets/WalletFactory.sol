@@ -9,13 +9,14 @@ import "./Wallet.sol";
 import "./WalletProxy.sol";
 
 interface InnerWalletFactory {
-  function create(address factory, address creator) external returns (address);
-  function getAddress(address factory, address creator) view external returns (address);
+  function create(address factory, address creator) external returns (address payable);
+  function getAddress(address factory, address creator) view external returns (address payable);
   function setSalt(uint salt) external returns (InnerWalletFactory);
 }
 
 contract WalletFactory is GSNRecipient, ProxyHost {
   using Address for address;
+  using Address for address payable;
   using SafeMath for uint256;
 
   InnerWalletFactory public innerFactory;
@@ -30,11 +31,11 @@ contract WalletFactory is GSNRecipient, ProxyHost {
     return InnerWalletFactory(address(new Factory2(type(WalletProxy).creationCode, InnerWalletFactory(0).create.selector)));
   }
 
-  function getAddress(address creator) public view returns (address) {
+  function getAddress(address creator) public view returns (address payable) {
     return innerFactory.getAddress(address(this), creator);
   }
 
-  function createWallet(address creator) public returns (address) {
+  function createWallet(address creator) public returns (address payable) {
     return innerFactory.create(address(this), creator);
   }
 
@@ -44,7 +45,7 @@ contract WalletFactory is GSNRecipient, ProxyHost {
     uint256 value
   ) external returns (bytes memory response) {
     address sender = _msgSender();
-    address walletAddress = getAddress(sender);
+    address payable walletAddress = getAddress(sender);
 
     if (!walletAddress.isContract()) {
       createWallet(sender);
@@ -68,7 +69,7 @@ contract WalletFactory is GSNRecipient, ProxyHost {
     * - Does not prevent cross-chain replay attacks (should use the chainID opcode)
     */
   function executeWithSignature(
-    address wallet,
+    address payable wallet,
     address target,
     bytes calldata data,
     uint256 value,
@@ -116,7 +117,7 @@ contract WalletFactory is GSNRecipient, ProxyHost {
    * @dev Returns to the user the extra amount that was previously charged, once the actual execution cost is known.
    */
   function _postRelayedCall(bytes memory context, bool, uint256 actualCharge, bytes32) internal {
-    (address walletAddress, uint256 transactionFee, uint256 gasPrice) =
+    (address payable walletAddress, uint256 transactionFee, uint256 gasPrice) =
         abi.decode(context, (address, uint256, uint256));
 
     // actualCharge is an _estimated_ charge, which assumes postRelayedCall will use all available gas.
