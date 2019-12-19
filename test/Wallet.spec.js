@@ -16,7 +16,8 @@ function fixSignature (signature) {
 
 contract('Wallet', ([admin, user1, user2, user3]) => {
   it('should be able to add and remove owners', async () => {
-    const wallet = await Wallet.new(admin, user1, { from: user1 });
+    const wallet = await Wallet.new({ from: user1 });
+    await wallet.initialize(admin, user1, { from: user1 });
 
     assert.isFalse(await wallet.isOwner(user2));
     await wallet.addOwner(user2, { from: user1 });
@@ -28,7 +29,8 @@ contract('Wallet', ([admin, user1, user2, user3]) => {
   });
 
   it('should be able to call itself', async () => {
-    const wallet = await Wallet.new(admin, user1, { from: user1 });
+    const wallet = await Wallet.new({ from: user1 });
+    await wallet.initialize(admin, user1, { from: user1 });
 
     const data = wallet.contract.methods.addOwner(user2).encodeABI();
     await wallet.execute(wallet.address, data, '0');
@@ -37,7 +39,8 @@ contract('Wallet', ([admin, user1, user2, user3]) => {
   });
 
   it('should validate signatures using ERC1271', async () => {
-    const wallet = await Wallet.new(admin, user1, { from: user1 });
+    const wallet = await Wallet.new({ from: user1 });
+    await wallet.initialize(admin, user1, { from: user1 });
     const data = sha3('Test');
     const signature = fixSignature(await web3.eth.sign(data, user1));
 
