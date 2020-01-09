@@ -5,7 +5,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/utils/Address.sol";
 import "./Factory2.sol";
 import "./ProxyHost.sol";
-import "./Wallet.sol";
+import "./IWallet.sol";
 import "./WalletProxy.sol";
 
 interface InnerWalletFactory {
@@ -51,7 +51,7 @@ contract WalletFactory is GSNRecipient, ProxyHost {
       createWallet(sender);
     }
 
-    return Wallet(walletAddress).execute(target, data, value);
+    return IWallet(walletAddress).execute(target, data, value);
   }
 
   function execute(
@@ -59,7 +59,7 @@ contract WalletFactory is GSNRecipient, ProxyHost {
     bytes calldata data,
     uint256 value
   ) external returns (bytes memory response) {
-    Wallet wallet = Wallet(getAddress(_msgSender()));
+    IWallet wallet = IWallet(getAddress(_msgSender()));
     return wallet.execute(target, data, value);
   }
 
@@ -75,7 +75,7 @@ contract WalletFactory is GSNRecipient, ProxyHost {
     uint256 value,
     bytes calldata signature
   ) external returns (bytes memory response) {
-    Wallet _wallet = Wallet(wallet);
+    IWallet _wallet = IWallet(wallet);
 
     bytes memory packed = abi.encodePacked(wallet, target, data, value);
     bytes32 hash = keccak256(packed);
@@ -91,7 +91,7 @@ contract WalletFactory is GSNRecipient, ProxyHost {
     uint256 value,
     bytes calldata signature
   ) external returns (bytes memory response) {
-    Wallet _wallet = Wallet(wallet);
+    IWallet _wallet = IWallet(wallet);
     address sender =  _msgSender();
 
     bytes memory packed = abi.encodePacked("burn:", wallet, sender);
@@ -146,7 +146,7 @@ contract WalletFactory is GSNRecipient, ProxyHost {
 
     // Now re-imburse the gas charges directly into the GSN hub.
     bytes memory depositData = abi.encodeWithSelector(IRelayHub(0).depositFor.selector, address(this));
-    Wallet(walletAddress).execute(getHubAddr(), depositData, actualCharge);
+    IWallet(walletAddress).execute(getHubAddr(), depositData, actualCharge);
   }
 
 }
