@@ -1,11 +1,13 @@
 pragma solidity ^0.5.8;
 
 import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
+import "openzeppelin-solidity/contracts/introspection/IERC1820Registry.sol";
+import "openzeppelin-solidity/contracts/token/ERC777/IERC777Recipient.sol";
 import "./ERC1271.sol";
 import "./IWallet.sol";
 import "./LibBytes.sol";
 
-contract Wallet is ERC1271, IWallet {
+contract Wallet is ERC1271, IWallet, IERC777Recipient {
   using ECDSA for bytes32;
   using _LibBytes for bytes;
 
@@ -22,6 +24,9 @@ contract Wallet is ERC1271, IWallet {
     owners[_factory] = true;
     owners[_creator] = true;
     creator = _creator;
+
+    IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24)
+      .setInterfaceImplementer(address(this), keccak256("ERC777TokensRecipient"), address(this));
   }
 
   function () external payable {}
@@ -78,4 +83,13 @@ contract Wallet is ERC1271, IWallet {
     address signer = hash.toEthSignedMessageHash().recover(signature);
     return returnIsValidSignatureMagicNumber(owners[signer]);
   }
+
+  function tokensReceived(
+    address /* operator */,
+    address /* from */,
+    address /* to */,
+    uint256 /* amount */,
+    bytes calldata /* userData */,
+    bytes calldata /* operatorData */
+  ) external {}
 }

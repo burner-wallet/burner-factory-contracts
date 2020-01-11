@@ -1,4 +1,6 @@
+const { deploySingletons } = require('./lib');
 const Wallet = artifacts.require('Wallet');
+const TestRelayableERC777 = artifacts.require('TestRelayableERC777');
 
 const { sha3 } = web3.utils;
 
@@ -19,6 +21,8 @@ function bytesToByteLength (bytes) {
 }
 
 contract('Wallet', ([admin, user1, user2, user3]) => {
+  before(deploySingletons);
+
   it('should be able to add and remove owners', async () => {
     const wallet = await Wallet.new({ from: user1 });
     await wallet.initialize(admin, user1, { from: user1 });
@@ -72,5 +76,14 @@ contract('Wallet', ([admin, user1, user2, user3]) => {
     assert.equal(await web3.eth.getBalance(recipient), '1000');
     assert.isTrue(await wallet.isOwner(user2));
     assert.isTrue(await wallet.isOwner(user3));
+  });
+
+  it('should be able to receive ERC777 tokens', async () => {
+    const wallet = await Wallet.new({ from: user1 });
+    await wallet.initialize(admin, user1, { from: user1 });
+
+    const token = await TestRelayableERC777.new();
+
+    await token.send(wallet.address, '1000', '0x');
   });
 });
