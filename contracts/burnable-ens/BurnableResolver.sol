@@ -17,6 +17,6 @@ contract BurnableResolver is Resolver {
   }
 
   function addr(bytes32 node) public view returns (address) {
-    return token.resolve(node);
+    return token.resolveAddress(node);
   }
 }
