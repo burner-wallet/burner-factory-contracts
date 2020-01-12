@@ -1,19 +1,23 @@
 const NameToken = artifacts.require('NameToken');
-const Resolver = artifacts.require('Resolver');
+const BurnableResolver = artifacts.require('BurnableResolver');
 
 const ENSRegistry = artifacts.require("@ensdomains/ens/ENSRegistry.sol");
 const PublicResolver = artifacts.require("@ensdomains/resolver/PublicResolver.sol");
+const ReverseRegistrar = artifacts.require("@ensdomains/ens/ReverseRegistrar.sol");
 const namehash = require('eth-ens-namehash');
 
 const { asciiToHex, sha3 } = web3.utils;
 
 contract('Burnable ENS', ([admin, account1, account2]) => {
-  let ens, resolver;
+  let ens, resolver, reverse;
 
   before(async () => {
     ens = await ENSRegistry.new();
     resolver = await PublicResolver.new(ens.address);
+    reverse = await ReverseRegistrar.new(ens.address, resolver.address);
     await ens.setSubnodeOwner(asciiToHex(0), sha3('eth'), admin);
+    await ens.setSubnodeOwner(asciiToHex(0), sha3('reverse'), admin);
+    await ens.setSubnodeOwner(namehash.hash('reverse'), sha3('addr'), reverse.address);
   });
 
   it('should use the nametoken for ENS names', async () => {
@@ -28,7 +32,7 @@ contract('Burnable ENS', ([admin, account1, account2]) => {
       { from: admin }
     );
     const subResolverAddr = await token.resolver();
-    const subResolver = await Resolver.at(subResolverAddr);
+    const subResolver = await BurnableResolver.at(subResolverAddr);
 
     await ens.setSubnodeOwner(namehash.hash('eth'), sha3('myburner'), admin);
     await resolver.setAddr(namehash.hash('myburner.eth'), '60', token.address, { from: admin });
@@ -45,6 +49,33 @@ contract('Burnable ENS', ([admin, account1, account2]) => {
 
     assert.equal(await ens.resolver(vitalikHash), subResolverAddr);
     assert.equal(await subResolver.addr(vitalikHash), account1);
+
+  });
+
+  it('should handle reverse resolution', async () => {
+    const token = await NameToken.new(
+      ens.address,
+      namehash.hash('myburner.eth'),
+      'myburner.eth',
+      '0',
+      '0',
+      { from: admin }
+    );
+    const subResolverAddr = await token.resolver();
+    const subResolver = await BurnableResolver.at(subResolverAddr);
+
+    await ens.setSubnodeOwner(namehash.hash('eth'), sha3('myburner'), admin);
+    await resolver.setAddr(namehash.hash('myburner.eth'), '60', token.address, { from: admin });
+    await ens.setResolver(namehash.hash('myburner.eth'), resolver.address, { from: admin });
+    await ens.setSubnodeOwner(namehash.hash('eth'), sha3('myburner'), token.address, { from: admin });
+
+    await token.register('vitalik', { from: account1 });
+    const {receipt}=await reverse.claimWithResolver(account1, subResolverAddr, { from: account1 });
+
+    // Check reverse
+    const reverseNode = namehash.hash(`${account1.substr(2)}.addr.reverse`.toLowerCase());
+    assert.equal(await ens.resolver(reverseNode), subResolverAddr);
+    assert.equal(await subResolver.name(reverseNode), 'vitalik.myburner.eth');
   });
 
   it('should let the owner transfer ENS ownership', async () => {

@@ -9,15 +9,18 @@ import './BurnableResolver.sol';
 import './INameToken.sol';
 
 contract NameToken is Context, Ownable, ERC721, INameToken {
+  bytes32 private constant ADDR_REVERSE_NODE = 0x91d1777781884d03a6757a803996e38de2a42967fb37eeaca72729271025a9e2;
+
   struct Name {
-    uint256 registrationTime;
     bytes32 node;
+    uint256 registrationTime;
     string name;
   }
 
   mapping(uint256 => Name) private tokens;
   mapping(bytes32 => uint256) private nodeToTokenId;
   mapping(address => uint256) private addressToTokenId;
+  mapping(bytes32 => address) private _reverseNodes;
 
   uint256 public expirationTime;
   uint256 public extentionTime;
@@ -80,6 +83,10 @@ contract NameToken is Context, Ownable, ERC721, INameToken {
     return tokens[id].node;
   }
 
+  function reverseNodes(bytes32 node) public view returns (address) {
+    return _reverseNodes[node];
+  }
+
   function name(address user) public view returns (string memory) {
     uint256 id = addressToTokenId[user];
     if (isTokenExpired(id)) {
@@ -123,7 +130,36 @@ contract NameToken is Context, Ownable, ERC721, INameToken {
     tokens[nextId].name = _name;
     addressToTokenId[sender] = nextId;
 
+    bytes32 reverseNode = keccak256(abi.encodePacked(ADDR_REVERSE_NODE, sha3HexAddress(sender)));
+    _reverseNodes[reverseNode] = sender;
+
     ens.setSubnodeOwner(rootNode, label, address(this));
     ens.setResolver(node, resolver);
+  }
+
+  /**
+   * @dev An optimised function to compute the sha3 of the lower-case
+   *      hexadecimal representation of an Ethereum address.
+   * @param addr The address to hash
+   * @return The SHA3 hash of the lower-case hexadecimal encoding of the
+   *         input address.
+   */
+  function sha3HexAddress(address addr) private pure returns (bytes32 ret) {
+    addr;
+    ret; // Stop warning us about unused variables
+    assembly {
+      let lookup := 0x3031323334353637383961626364656600000000000000000000000000000000
+
+      for { let i := 40 } gt(i, 0) { } {
+        i := sub(i, 1)
+        mstore8(i, byte(and(addr, 0xf), lookup))
+        addr := div(addr, 0x10)
+        i := sub(i, 1)
+        mstore8(i, byte(and(addr, 0xf), lookup))
+        addr := div(addr, 0x10)
+      }
+
+      ret := keccak256(0, 40)
+    }
   }
 }
