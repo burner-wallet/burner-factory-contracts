@@ -137,6 +137,15 @@ contract NameToken is Context, Ownable, ERC721, INameToken {
     ens.setResolver(node, resolver);
   }
 
+  function burn(uint256 id) external {
+    require(!isTokenExpired(id));
+
+    _burn(_msgSender(), id);
+    tokens[id].node = bytes32(0);
+    tokens[id].registrationTime = 0;
+    tokens[id].name = '';
+  }
+
   /**
    * @dev An optimised function to compute the sha3 of the lower-case
    *      hexadecimal representation of an Ethereum address.

@@ -8,6 +8,9 @@ const namehash = require('eth-ens-namehash');
 
 const { asciiToHex, sha3 } = web3.utils;
 
+const ZERO_ADDR = '0x' + web3.utils.padRight('0', 40);
+const ZERO_NODE = '0x' + web3.utils.padRight('0', 64);
+
 contract('Burnable ENS', ([admin, account1, account2]) => {
   let ens, resolver, reverse;
 
@@ -70,7 +73,7 @@ contract('Burnable ENS', ([admin, account1, account2]) => {
     await ens.setSubnodeOwner(namehash.hash('eth'), sha3('myburner'), token.address, { from: admin });
 
     await token.register('vitalik', { from: account1 });
-    const {receipt}=await reverse.claimWithResolver(account1, subResolverAddr, { from: account1 });
+    await reverse.claimWithResolver(account1, subResolverAddr, { from: account1 });
 
     // Check reverse
     const reverseNode = namehash.hash(`${account1.substr(2)}.addr.reverse`.toLowerCase());
@@ -91,5 +94,35 @@ contract('Burnable ENS', ([admin, account1, account2]) => {
     await ens.setSubnodeOwner(namehash.hash('eth'), sha3('transferable'), token.address, { from: admin });
     await token.transferENSOwnership(account1, { from: admin });
     assert.equal(await ens.owner(namehash.hash('transferable.eth')), account1);
+  });
+
+  it('should let a user burn their domain', async () => {
+    const token = await NameToken.new(
+      ens.address,
+      namehash.hash('myburner.eth'),
+      'myburner.eth',
+      '0',
+      '0',
+      { from: admin }
+    );
+    const subResolverAddr = await token.resolver();
+    const subResolver = await BurnableResolver.at(subResolverAddr);
+
+    await ens.setSubnodeOwner(namehash.hash('eth'), sha3('myburner'), admin);
+    await resolver.setAddr(namehash.hash('myburner.eth'), '60', token.address, { from: admin });
+    await ens.setResolver(namehash.hash('myburner.eth'), resolver.address, { from: admin });
+    await ens.setSubnodeOwner(namehash.hash('eth'), sha3('myburner'), token.address, { from: admin });
+
+    await token.register('vitalik', { from: account1 });
+    await token.burn('1', { from: account1 });
+
+    const vitalikHash = namehash.hash('vitalik.myburner.eth');
+
+    assert.equal(await token.resolveAddress(vitalikHash), ZERO_ADDR);
+    assert.equal(await token.reverse(account1), ZERO_NODE);
+    assert.equal(await token.name(account1), '');
+
+    assert.equal(await ens.resolver(vitalikHash), subResolverAddr);
+    assert.equal(await subResolver.addr(vitalikHash), ZERO_ADDR);
   });
 });
