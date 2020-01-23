@@ -59,7 +59,12 @@ contract('Wallet', ([admin, user1, user2, user3]) => {
     const wallet = await Wallet.new({ from: user1 });
     await wallet.initialize(admin, user1, { from: user1 });
 
-    await web3.eth.sendTransaction({ to: wallet.address, from: user1, value: '1000' });
+    const { logs: logs0 } = await wallet.sendTransaction({ from: user1, value: '1000' });
+    assert.equal(logs0.length, 1);
+    assert.equal(logs0[0].event, 'Transfer');
+    assert.equal(logs0[0].args.from, user1);
+    assert.equal(logs0[0].args.to, wallet.address);
+    assert.equal(logs0[0].args.value, 1000);
 
     const { address: recipient } = web3.eth.accounts.create();
     const { logs } = await wallet.execute(recipient, '0x', '1000');

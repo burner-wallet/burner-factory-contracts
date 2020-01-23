@@ -30,7 +30,9 @@ contract Wallet is ERC1271, IWallet, IERC777Recipient {
       .setInterfaceImplementer(address(this), keccak256("ERC777TokensRecipient"), address(this));
   }
 
-  function () external payable {}
+  function () external payable {
+    emit Transfer(msg.sender, address(this), msg.value);
+  }
 
   modifier onlyOwner() {
     require(owners[msg.sender] || msg.sender == address(this), "Must be called by the creator");
