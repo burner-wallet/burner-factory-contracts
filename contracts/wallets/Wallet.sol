@@ -17,6 +17,7 @@ contract Wallet is ERC1271, IWallet, IERC777Recipient {
 
   event OwnerAdded(address owner);
   event OwnerRemoved(address owner);
+  event Transfer(address indexed from, address indexed to, uint256 value);
 
   function initialize(address _factory, address _creator) external {
     assert(creator == address(0));
@@ -42,7 +43,10 @@ contract Wallet is ERC1271, IWallet, IERC777Recipient {
     uint256 value
   ) external payable onlyOwner returns (bytes memory response) {
     (bool success, bytes memory returnData) = address(target).call.value(value)(data);
-    require(success);
+    require(success, "Execute failed");
+    if (data.length == 0 && value > 0) {
+      emit Transfer(address(this), target, value);
+    }
     return returnData;
   }
 
@@ -51,7 +55,7 @@ contract Wallet is ERC1271, IWallet, IERC777Recipient {
     bytes calldata data,
     uint256[] calldata dataLengths,
     uint256[] calldata values
-  ) external payable /*onlyOwner returns (bytes memory response, uint256[] responseLengths)*/ {
+  ) external payable onlyOwner /*returns (bytes memory response, uint256[] responseLengths)*/ {
     require(targets.length == dataLengths.length && targets.length == values.length, "Invalid lengths");
 
     uint256 dataPointer = 0;
@@ -61,7 +65,10 @@ contract Wallet is ERC1271, IWallet, IERC777Recipient {
       dataPointer = dataPointer + dataLengths[i];
 
       (bool success,) = address(targets[i]).call.value(values[i])(_data);
-      require(success);
+      require(success, "Batch execute failed");
+      if (dataLengths[i] == 0 && values[i] > 0) {
+        emit Transfer(address(this), targets[i], values[i]);
+      }
     }
   }
 
