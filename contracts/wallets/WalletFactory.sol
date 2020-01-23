@@ -102,6 +102,28 @@ contract WalletFactory is GSNRecipient, ProxyHost {
     return _wallet.execute(target, data, value);
   }
 
+  function createAddOwnerAndExecute(
+    address owner,
+    address target,
+    bytes calldata data,
+    uint256 value,
+    bytes calldata signature
+  ) external returns (bytes memory response) {
+    address payable walletAddress = getAddress(owner);
+    address sender =  _msgSender();
+
+    if (!walletAddress.isContract()) {
+      createWallet(owner);
+    }
+
+    bytes memory packed = abi.encodePacked("burn:", walletAddress, sender);
+    bytes32 hash = keccak256(packed);
+    require(IWallet(walletAddress).isValidSignature(hash, signature) == ERC1271_RETURN_VALID_SIGNATURE, "Invalid signature");
+    IWallet(walletAddress).addOwner(sender);
+
+    return IWallet(walletAddress).execute(target, data, value);
+  }
+
   function acceptRelayedCall(
     address,
     address from,

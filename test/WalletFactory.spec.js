@@ -5,7 +5,7 @@ const TestWalletImplementation = artifacts.require('TestWalletImplementation');
 const { GSNProvider } = require("@openzeppelin/gsn-provider");
 const { startRelay } = require('./lib');
 
-const { toWei } = web3.utils;
+const { toWei, soliditySha3 } = web3.utils;
 
 contract('WalletFactory', ([admin, user1, user2]) => {
   let relayProcess;
@@ -160,4 +160,25 @@ contract('WalletFactory', ([admin, user1, user2]) => {
     assert.isTrue(await wallet.owners(user1));
     assert.equal(await web3.eth.getBalance(recipient), '1000');
   });
+
+  it('should let a user create, add owner and execute in a single transaction', async () => {
+    const factory = await WalletFactory.new(implementation, { from: admin });
+    const nullWallet = await Wallet.at(implementation);
+
+    const identityAccount = web3.eth.accounts.create();
+    const { address: recipient } = web3.eth.accounts.create();
+
+    const wallet = await factory.getAddress(identityAccount.address);
+    await web3.eth.sendTransaction({ to: wallet, from: user1, value: '1000' });
+
+    const hash = soliditySha3('burn:', wallet, user1);
+    const { signature } = identityAccount.sign(hash);
+
+    await factory.createAddOwnerAndExecute(identityAccount.address, recipient, '0x', '1000', signature, { from: user1 });
+
+    const walletContract = await Wallet.at(wallet);
+    assert.isTrue(await walletContract.owners(user1));
+    assert.equal(await web3.eth.getBalance(recipient), '1000');
+  });
+
 });
