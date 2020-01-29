@@ -1,14 +1,14 @@
 pragma solidity ^0.5.0;
 
 import '@ensdomains/ens/contracts/ENSRegistry.sol';
-import 'openzeppelin-solidity/contracts/GSN/Context.sol';
 import 'openzeppelin-solidity/contracts/token/ERC721/ERC721.sol';
 import 'openzeppelin-solidity/contracts/ownership/Ownable.sol';
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
+import '../FreeGas.sol';
 import './BurnableResolver.sol';
 import './INameToken.sol';
 
-contract NameToken is Context, Ownable, ERC721, INameToken {
+contract NameToken is Ownable, ERC721, INameToken, FreeGas {
   bytes32 private constant ADDR_REVERSE_NODE = 0x91d1777781884d03a6757a803996e38de2a42967fb37eeaca72729271025a9e2;
 
   struct Name {
