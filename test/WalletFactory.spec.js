@@ -10,6 +10,7 @@ const { toWei, soliditySha3 } = web3.utils;
 contract('WalletFactory', ([admin, user1, user2]) => {
   let relayProcess;
   let implementation;
+  let chainId = '1';
   before(async () => {
     relayProcess = await startRelay(admin);
     const implementationInstance = await Wallet.new();
@@ -98,6 +99,7 @@ contract('WalletFactory', ([admin, user1, user2]) => {
       '0x',
       '400',
       '0',
+      chainId,
     );
     const { signature } = account.sign(hash);
     await factory.executeWithSignature(walletAddress, recipient, '0x', '400', signature, { from: user1 });
@@ -108,6 +110,7 @@ contract('WalletFactory', ([admin, user1, user2]) => {
       '0x',
       '500',
       '1', // incremented nonce
+      chainId,
     );
     const { signature: sig2 } = account.sign(hash2);
     await factory.executeWithSignature(walletAddress, recipient, '0x', '500', sig2, { from: user1 });
@@ -133,6 +136,7 @@ contract('WalletFactory', ([admin, user1, user2]) => {
       data,
       '0',
       '0',
+      chainId,
     );
     const { signature } = account.sign(hash);
 

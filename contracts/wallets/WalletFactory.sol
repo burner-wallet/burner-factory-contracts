@@ -79,7 +79,7 @@ contract WalletFactory is ProxyHost, FreeGas {
   ) external returns (bytes memory response) {
     IWallet _wallet = IWallet(wallet);
 
-    bytes memory packed = abi.encodePacked(wallet, target, data, value, getNonce(wallet));
+    bytes memory packed = abi.encodePacked(wallet, target, data, value, getNonce(wallet), chainId());
     bytes32 hash = keccak256(packed);
     require(_wallet.isValidSignature(hash, signature) == ERC1271_RETURN_VALID_SIGNATURE, "Invalid signature");
 
@@ -131,5 +131,11 @@ contract WalletFactory is ProxyHost, FreeGas {
       return IWallet(wallet).nonce();
     }
     return 0;
+  }
+
+  function chainId() public pure returns (uint256 id) {
+    assembly {
+      id := chainid()
+    }
   }
 }
