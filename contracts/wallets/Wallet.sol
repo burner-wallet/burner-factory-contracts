@@ -25,6 +25,7 @@ contract Wallet is ERC1271, IWallet, IERC777Recipient {
 
   function initialize(address _factory, address _creator) external {
     assert(creator == address(0));
+    require(_creator != address(0));
 
     owners[_factory] = true;
     owners[_creator] = true;
@@ -74,7 +75,7 @@ contract Wallet is ERC1271, IWallet, IERC777Recipient {
 
     uint256 dataPointer = 0;
 
-    for (uint8 i = 0; i < targets.length; i++) {
+    for (uint16 i = 0; i < targets.length; i++) {
       bytes memory _data = data.slice(dataPointer, dataPointer + dataLengths[i]);
       dataPointer = dataPointer + dataLengths[i];
 

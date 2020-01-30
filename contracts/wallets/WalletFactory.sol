@@ -22,9 +22,10 @@ contract WalletFactory is ProxyHost, FreeGas {
 
   InnerWalletFactory public innerFactory;
 
-  bytes4 constant public ERC1271_RETURN_VALID_SIGNATURE = 0x20c13b0b; // TODO: Likely needs to be updated
+  bytes4 constant public ERC1271_RETURN_VALID_SIGNATURE = 0x20c13b0b;
 
   constructor(address walletImplementation) public ProxyHost(walletImplementation) {
+    require(walletImplementation != address(0) && walletImplementation.isContract());
     innerFactory = createFactory();
   }
 
