@@ -7,7 +7,9 @@ import "../wallets/IWallet.sol";
 contract TestWalletImplementation is ERC1271, IWallet {
   using ECDSA for bytes32;
 
+  uint8 public decimals = 18;
   address public creator;
+  uint256 public _nonce;
 
   mapping(address => bool) public owners;
 
@@ -58,5 +60,9 @@ contract TestWalletImplementation is ERC1271, IWallet {
 
   function changeCreator(address newCreator) external onlyOwner {
     creator = newCreator;
+  }
+
+  function nonce() external view returns (uint256) {
+    return 0;
   }
 }

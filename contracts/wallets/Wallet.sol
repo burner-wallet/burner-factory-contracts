@@ -3,6 +3,7 @@ pragma solidity ^0.5.8;
 import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 import "openzeppelin-solidity/contracts/introspection/IERC1820Registry.sol";
 import "openzeppelin-solidity/contracts/token/ERC777/IERC777Recipient.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./ERC1271.sol";
 import "./IWallet.sol";
 import "./LibBytes.sol";
@@ -10,8 +11,11 @@ import "./LibBytes.sol";
 contract Wallet is ERC1271, IWallet, IERC777Recipient {
   using ECDSA for bytes32;
   using _LibBytes for bytes;
+  using SafeMath for uint256;
 
+  uint8 public decimals = 18;
   address public creator;
+  uint256 public _nonce;
 
   mapping(address => bool) public owners;
 
@@ -39,11 +43,17 @@ contract Wallet is ERC1271, IWallet, IERC777Recipient {
     _;
   }
 
+  function nonce() external view returns (uint256) {
+    return _nonce;
+  }
+
   function execute(
     address target,
     bytes calldata data,
     uint256 value
   ) external payable onlyOwner returns (bytes memory response) {
+    _nonce = _nonce.add(1);
+
     (bool success, bytes memory returnData) = address(target).call.value(value)(data);
     require(success, "Execute failed");
     if (data.length == 0 && value > 0) {
@@ -58,6 +68,8 @@ contract Wallet is ERC1271, IWallet, IERC777Recipient {
     uint256[] calldata dataLengths,
     uint256[] calldata values
   ) external payable onlyOwner /*returns (bytes memory response, uint256[] responseLengths)*/ {
+    _nonce = _nonce.add(1);
+
     require(targets.length == dataLengths.length && targets.length == values.length, "Invalid lengths");
 
     uint256 dataPointer = 0;
@@ -84,7 +96,7 @@ contract Wallet is ERC1271, IWallet, IERC777Recipient {
 
   function removeOwner(address otherOwner) external onlyOwner {
     require(otherOwner != msg.sender);
-    require(creator != msg.sender);
+    require(otherOwner != creator);
     owners[otherOwner] = false;
   }
 

@@ -11,4 +11,6 @@ contract IWallet {
   function isValidSignature(bytes32 hash, bytes memory signature) public view returns (bytes4);
 
   function addOwner(address newOwner) external;
+
+  function nonce() external view returns (uint256);
 }
